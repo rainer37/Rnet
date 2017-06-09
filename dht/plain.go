@@ -21,12 +21,15 @@ type Plain_node struct {
 	Port_int int
 	Port_string string
 	ID string
+	NList map[string]string // list of peers with their ip's
 }
 
+// error message printing routine
 func eprint(err error)  {
 	fmt.Println(DHT_PREFIX, err.Error())
 }
 
+// echo server
 func handleRequest(conn net.Conn) {
 	// Make a buffer to hold incoming data.
 	defer conn.Close()
@@ -40,9 +43,10 @@ func handleRequest(conn net.Conn) {
 		return 
 	}
 
+
+
 	// Send a response back to person contacting us.
 	conn.Write([]byte("Message received: "+string(buf)))
-	// Close the connection when you're done with it.
 }
 
 func (p *Plain_node) Init() (uint8, error) {

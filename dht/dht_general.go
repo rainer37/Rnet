@@ -10,6 +10,8 @@ package dht
 	CHECK_PEER
 	NOTIFY
 	SEND
+	LEAVE
+	REPORT
 	.
 	.
 	.
@@ -19,6 +21,8 @@ package dht
 import (
 	"fmt"
 )
+
+const DHT_PREFIX string = "[DHT]\t"
 
 // DHT node interface
 type D_node interface {
@@ -35,9 +39,16 @@ type D_node interface {
  		Join(ip string, port int) (opStatus int, err error)
 	*/
 	Join(string, int) (uint8, error)
-}
 
-const DHT_PREFIX string = "[DHT]\t"
+	/*
+		Send the data to the peer
+
+		Send(ip string, port int, msg []byte) (opStatus int, err error)
+	*/
+
+	// Send(string, int, []byte) (int, error)
+
+}
 
 // First time initialization
 func Self_init(d_node D_node) error {
