@@ -20,19 +20,30 @@ import (
 	"fmt"
 )
 
-const DHT_PREFIX string = "[DHT]\t"
+// DHT node interface
+type D_node interface {
+	
+	/*
+		Self-initialization of the new p2p systems.
+	*/
+	Init() (uint8, error)
 
-type Node struct {
-	IP string
-	Port_int int
-	Port_string string
-	ID string
+	/*
+		After finding the existing peer(s) in the system, send out 
+		the request for joining the system.
+
+ 		Join(ip string, port int) (opStatus int, err error)
+	*/
+	Join(string, int) (uint8, error)
 }
 
-// First time initialization
-func Self_init(ip string, port int, topo string) *Node {
-	fmt.Printf("%sMy IP is [%s:%d] using [%s] as base arch\n", DHT_PREFIX, ip, port, topo)
-	new_node := &Node{ip, port, "", ""}
+const DHT_PREFIX string = "[DHT]\t"
 
-	return new_node
+// First time initialization
+func Self_init(d_node D_node) error {
+	
+	fmt.Println(DHT_PREFIX+"General Dispatcher Initiated")
+	d_node.Init()
+	return nil
+
 }

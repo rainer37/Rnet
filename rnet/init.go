@@ -1,5 +1,9 @@
 package main
 
+/*
+	User Interfaces for both client & server side ops.
+*/
+
 import (
 	"fmt"
 	"os"
@@ -13,7 +17,13 @@ func main() {
 
 	fmt.Println(os.Args[0])
 
-	dht.Self_init("192.168.0.31", 1388, "chord")
+	node := &dht.Plain_node{"localhost", 1388, "1338", "plain"}
+
+	go dht.Self_init(node)
 
 	transport.Fib(4)
+
+	for {
+
+	}
 }
