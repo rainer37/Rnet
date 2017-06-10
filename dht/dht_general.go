@@ -53,7 +53,7 @@ type D_node interface {
 // First time initialization
 func Self_init(d_node D_node) error {
 	
-	fmt.Println(DHT_PREFIX+"General Dispatcher Initiated")
+	fmt.Println(DHT_PREFIX+"Main DHT Dispatcher Initiated")
 	d_node.Init()
 	return nil
 
