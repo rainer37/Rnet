@@ -19,31 +19,45 @@ package dht
 */
 
 import (
+	"os"
 	"fmt"
 )
 
-const DHT_PREFIX string = "[DHT]\t"
+// basic node structure.
+type Node struct {
+	IP string
+	State uint
+	Port_string string
+	ID string
+}
+
+const	(
+	PLAIN_TOPO string = "plain"
+	CHORD_TOPO string = "chord"
+	DHT_PREFIX string = "[DHT]\t"
+)
 
 // DHT node interface
 type D_node interface {
 	
 	/*
 		Self-initialization of the new p2p systems.
+		Init(ip string, port string, extra ...string) (opStatus uint8, err error)
 	*/
-	Init() (uint8, error)
+	Init(string, string, ...string) (uint8, error)
 
 	/*
 		After finding the existing peer(s) in the system, send out 
 		the request for joining the system.
 
- 		Join(ip string, port int) (opStatus int, err error)
+ 		Join(ip string, port int) (opStatus uint8, err error)
 	*/
-	Join(string, int) (uint8, error)
+	Join(string, string) (uint8, error)
 
 	/*
 		Send the data to the peer
 
-		Send(ip string, port int, msg []byte) (opStatus int, err error)
+		Send(ip string, port string, msg []byte) (opStatus int, err error)
 	*/
 
 	// Send(string, int, []byte) (int, error)
@@ -51,10 +65,44 @@ type D_node interface {
 }
 
 // First time initialization
-func Self_init(d_node D_node) error {
-	
+func Self_init(ip string, port string, topo string) error {
+
 	fmt.Println(DHT_PREFIX+"Main DHT Dispatcher Initiated")
-	d_node.Init()
+	
+	switch topo {
+	case PLAIN_TOPO:
+		d_node := new(Plain_node)
+		_, err := d_node.Init(ip, port)
+		if err != nil {
+			return err
+		}
+	default:
+		fmt.Println(DHT_PREFIX+"Unknown Topology Provided, System Exiting...")
+		os.Exit(-1)
+	}
+	
 	return nil
+}
+
+// Join wrapper
+func Want_to_join(ip string, port string, states string) error {
+
+	p := new(Plain_node)
+
+	p.IP = "127.0.0.1"
+	p.Port_string = "1339"
+	p.State = 0
+	p.NList = make(map[string]string)
+
+	_, err := p.Join(ip, port)
+
+	if err != nil {
+		os.Exit(-1)
+	}
+
+	return nil
+}
+
+func load_from_states_string(states string) {
 
 }

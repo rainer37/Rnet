@@ -14,17 +14,30 @@ import (
 )
 
 func main() {
+
 	fmt.Println("Initiating R-NET v1.0.0\t[", time.Now() ,"]")
 	fmt.Println("Local Arch & OS:\t[", runtime.GOARCH, ":", runtime.GOOS,"]")
 	
-	//fmt.Println(os.Args[0])
+	/* flags multiplexer
+		-i : self initialization with [ip] [port] [topo]
+		-j : join on an existing node if known ip with [target_ip] [target_port]
+		TODO: MORE CASES -s -l -a
+	*/
+	flag, ip, port := os.Args[1],os.Args[2],os.Args[3]
 
-	node := &dht.Plain_node{"127.0.0.1", 0, 1388, "1338", "plain", make(map[string]string)}
+	switch flag {
+	case "-i":
+		go dht.Self_init(ip, port, os.Args[4])
+	case "-j":
+		fmt.Println("Loading Local State...")
+		states := "" // load from local persistent file
+ 		go dht.Want_to_join(ip, port, states)
+		fmt.Printf("Stated Updated, Starting Join on [%s:%s]\n", ip, port)
+	default:
+		fmt.Println("The System Does NOT Understand This Option, Exiting...")
+		os.Exit(-1)
+	}
 
-	node.NList["1234567891231111"] = "123.456.789.123:1111"
-	node.NList["2552552552551234"] = "255.255.255.255:1234"
-
-	go dht.Self_init(node)
 
 	transport.Fib(4)
 

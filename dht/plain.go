@@ -9,10 +9,10 @@ package dht
 		[ID : IP]
 
 	ID space: string (127.0.0.1:1338 => 1270000000011338)
-	IP space: normal (assuming unique IPv4)
+	IP space: normal (assuming unique and persistent IPv4)
 
 	Joining Mechanism:
-		1. Send IP to any existing node in system with msg starting with 'J' and ip.
+		1. Send IP to any existing node in system with msg starting with 'J' ID and ip:port.
 		2. Responding peer replies with 'A' as acknowlegement, and the NLIST from peer to
 		   Update local NLIST.
 		3. Joining routine done. 
@@ -26,16 +26,123 @@ import (
 )
 
 var mutex = &sync.Mutex{}
-const PLAIN_TOPO string = "PLAIN_OVERLAY"
+const PLAIN_OVERLAY string = "PLAIN_OVERLAY"
 
 type Plain_node struct {
-	IP string
-	State uint
-	Port_int uint
-	Port_string string
-	ID string
+	Node
 	NList map[string]string // list of peers with their ip's
 }
+
+func (p *Plain_node) Init(ip string, port string, extra ...string) (uint8, error) {
+		
+	p.IP = ip
+	p.ID = id_generate_4(p.IP, p.Port_string) 
+	p.Port_string = port
+	p.State = 0
+	p.NList = make(map[string]string)
+	p.NList["1234567891231111"] = "123.456.789.123:1111"
+	p.NList["2552552552551234"] = "255.255.255.255:1234"
+
+	fmt.Printf("%sMy IP is [%s:%s] using [%s] as base arch\n", DHT_PREFIX, p.IP, p.Port_string, PLAIN_OVERLAY)
+
+	l, err := net.Listen("tcp", p.IP+":"+p.Port_string)
+
+	if err != nil {
+		eprint(err)
+		return 1, err
+	}
+
+	defer l.Close()
+
+	fmt.Println(DHT_PREFIX+"Start Listening on ["+p.IP+":"+p.Port_string+"]")
+
+	// add self information to the map
+	p.NList[p.IP] = p.ID
+
+	// server start and ready for receiving msgs.
+	for {
+		conn, err := l.Accept()
+
+		fmt.Println(DHT_PREFIX+"Incoming connection from "+conn.RemoteAddr().String())
+
+		if err != nil {
+			eprint(err)
+			conn.Close()
+			return 1, err
+		}
+		go p.handleRequest(conn)
+	}
+
+	return 0,nil
+}
+
+
+func (p *Plain_node) Join(ip string, port string) (uint8, error) {
+
+	fmt.Println(p.IP, p.Port_string)
+	id := id_generate_4(p.IP, p.Port_string) // generate id for new node
+
+	fmt.Printf("%sMy ID: [%s]\n", DHT_PREFIX, id)
+
+	p.ID = id
+
+	if id == "0" {
+		fmt.Println(DHT_PREFIX+"Error on generating id")
+	}
+
+	// setup address of local and remote
+	remoteAddr,_ := net.ResolveTCPAddr("tcp", ip+":"+port)
+	localAddr,_ := net.ResolveTCPAddr("tcp", p.IP+":"+p.Port_string)
+
+	conn, err := net.DialTCP("tcp", localAddr, remoteAddr)
+
+	if err != nil {
+		fmt.Println(DHT_PREFIX+"Cannot start connection to target address")
+		return 1, err
+	}
+
+	// send J msg to the existing node for ack.
+	conn.Write([]byte("J "+p.ID+" "+p.IP+":"+p.Port_string))
+
+	// wait for the response.
+	p.handleRequest(conn)
+
+	// starting listening
+
+	// l, err := net.Listen("tcp", p.IP+":"+p.Port_string)
+
+	// if err != nil {
+	// 	eprint(err)
+	// 	return 1, err
+	// }
+
+	// defer l.Close()
+
+	// fmt.Println(DHT_PREFIX+"Start Listening on ["+p.IP+":"+p.Port_string+"]")
+
+	// // add self information to the map
+	// p.NList[p.IP] = p.ID
+
+	// // server start and ready for receiving msgs.
+	// for {
+	// 	conn, err := l.Accept()
+
+	// 	fmt.Println(DHT_PREFIX+"Incoming connection from "+conn.RemoteAddr().String())
+
+	// 	if err != nil {
+	// 		eprint(err)
+	// 		conn.Close()
+	// 		return 1, err
+	// 	}
+	// 	go p.handleRequest(conn)
+	// }	
+
+	return 0, nil
+} 
+
+/************************************/
+/*          INDIVIDUAL FNs          */
+/************************************/
 
 // error message printing routine
 func eprint(err error)  {
@@ -74,54 +181,6 @@ func (p *Plain_node) handleRequest(conn net.Conn) {
 	}
 }
 
-func (p *Plain_node) Init() (uint8, error) {
-	
-	fmt.Printf("%sMy IP is [%s:%d] using [%s] as base arch\n", DHT_PREFIX, p.IP, p.Port_int, PLAIN_TOPO)
-	
-	p.ID = "0" // first node in the system.
-
-	l, err := net.Listen("tcp", p.IP+":"+p.Port_string)
-	if err != nil {
-		eprint(err)
-		return 1, err
-	}
-
-	defer l.Close()
-
-	fmt.Println(DHT_PREFIX+"Start Listening on ["+p.IP+":"+p.Port_string+"]")
-
-	// add self information to the map
-	p.NList[p.IP] = id_generate_4(p.IP, p.Port_string)
-
-	// server start and ready for receiving msgs.
-	for {
-		conn, err := l.Accept()
-
-		fmt.Println(DHT_PREFIX+"Incoming connection from "+conn.RemoteAddr().String())
-
-		if err != nil {
-			eprint(err)
-			conn.Close()
-			return 1, err
-		}
-		go p.handleRequest(conn)
-	}
-
-	return 0,nil
-}
-
-
-func (p *Plain_node) Join(ip string, port int) (uint8, error) {
-
-	id := id_generate_4(ip, string(port)) // generate id for new node
-
-	if id == "0" {
-		fmt.Println(DHT_PREFIX+"Error on generating id")
-	}
-
-	return 0, nil
-} 
-
 // generate the id by the ipv4 address and port number
 // ex. 192.168.0.1:1338 => 1921680000011338
 // return string id or 0 for failure
@@ -140,7 +199,7 @@ func id_generate_4(ip string, port string) string {
 		id = id + strings.Repeat("0", 3-len(v)) + v
 	}
 
-	return id
+	return id+port
 }
 
 // convert map[id]ip to single string in format:
@@ -175,7 +234,8 @@ func (p *Plain_node) handle_join(msg string, conn net.Conn) {
 	mutex.Unlock()
 
 	fmt.Printf("%sWelcome [%s]\n", DHT_PREFIX, id)
-
+	fmt.Println(p.NList)
+	
 	nlist := p.generate_nlist()
 
 	conn.Write([]byte("A "+nlist))
