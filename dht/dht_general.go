@@ -89,8 +89,8 @@ func Want_to_join(ip string, port string, states string) error {
 
 	p := new(Plain_node)
 
-	p.IP = "127.0.0.1"
-	p.Port_string = "1339"
+	p.IP = Local_ip_4()
+	p.Port_string = "8080"
 	p.State = 0
 	p.NList = make(map[string]string)
 

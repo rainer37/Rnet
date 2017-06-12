@@ -38,42 +38,16 @@ func (p *Plain_node) Init(ip string, port string, extra ...string) (uint8, error
 	p.IP = ip
 	p.ID = id_generate_4(p.IP, p.Port_string) 
 	p.Port_string = port
-	p.State = 0
+	p.State = 1
 	p.NList = make(map[string]string)
 	p.NList["1234567891231111"] = "123.456.789.123:1111"
 	p.NList["2552552552551234"] = "255.255.255.255:1234"
 
 	fmt.Printf("%sMy IP is [%s:%s] using [%s] as base arch\n", DHT_PREFIX, p.IP, p.Port_string, PLAIN_OVERLAY)
 
-	l, err := net.Listen("tcp", p.IP+":"+p.Port_string)
+	p.listen()
 
-	if err != nil {
-		eprint(err)
-		return 1, err
-	}
-
-	defer l.Close()
-
-	fmt.Println(DHT_PREFIX+"Start Listening on ["+p.IP+":"+p.Port_string+"]")
-
-	// add self information to the map
-	p.NList[p.IP] = p.ID
-
-	// server start and ready for receiving msgs.
-	for {
-		conn, err := l.Accept()
-
-		fmt.Println(DHT_PREFIX+"Incoming connection from "+conn.RemoteAddr().String())
-
-		if err != nil {
-			eprint(err)
-			conn.Close()
-			return 1, err
-		}
-		go p.handleRequest(conn)
-	}
-
-	return 0,nil
+	return 0, nil
 }
 
 
@@ -107,35 +81,7 @@ func (p *Plain_node) Join(ip string, port string) (uint8, error) {
 	// wait for the response.
 	p.handleRequest(conn)
 
-	// starting listening
-
-	// l, err := net.Listen("tcp", p.IP+":"+p.Port_string)
-
-	// if err != nil {
-	// 	eprint(err)
-	// 	return 1, err
-	// }
-
-	// defer l.Close()
-
-	// fmt.Println(DHT_PREFIX+"Start Listening on ["+p.IP+":"+p.Port_string+"]")
-
-	// // add self information to the map
-	// p.NList[p.IP] = p.ID
-
-	// // server start and ready for receiving msgs.
-	// for {
-	// 	conn, err := l.Accept()
-
-	// 	fmt.Println(DHT_PREFIX+"Incoming connection from "+conn.RemoteAddr().String())
-
-	// 	if err != nil {
-	// 		eprint(err)
-	// 		conn.Close()
-	// 		return 1, err
-	// 	}
-	// 	go p.handleRequest(conn)
-	// }	
+	p.listen()
 
 	return 0, nil
 } 
@@ -143,6 +89,34 @@ func (p *Plain_node) Join(ip string, port string) (uint8, error) {
 /************************************/
 /*          INDIVIDUAL FNs          */
 /************************************/
+
+func (p *Plain_node) listen() {
+	l, err := net.Listen("tcp", p.IP+":"+p.Port_string)
+
+	if err != nil {
+		eprint(err)
+	}
+
+	defer l.Close()
+
+	fmt.Println(DHT_PREFIX+"Start Listening on ["+p.IP+":"+p.Port_string+"]")
+
+	// add self information to the map
+	p.NList[p.IP] = p.ID
+
+	// server start and ready for receiving msgs.
+	for {
+		conn, err := l.Accept()
+
+		fmt.Println(DHT_PREFIX+"Incoming connection from "+conn.RemoteAddr().String())
+
+		if err != nil {
+			eprint(err)
+			conn.Close()
+		}
+		go p.handleRequest(conn)
+	}
+}
 
 // error message printing routine
 func eprint(err error)  {

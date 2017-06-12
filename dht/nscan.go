@@ -11,8 +11,31 @@ package dht
 
 import (
 	"fmt"
+	"net"
+	"strings"
+	"regexp"
 )
+
+const LOCALHOST = "127.0.0.1"
 
 func Subnet_scan() {
 	fmt.Println("Looking for you...")
+}
+
+// get local ipv4 in the subnet
+// TODO: get external ip 
+func Local_ip_4() string {
+	// list all the address from network interfaces
+	faces, _ := net.InterfaceAddrs()
+
+	for _,v := range faces {
+		ip := v.String()[:strings.Index(v.String(), "/")]
+
+		// check for ipv4 format
+		if m,_ := regexp.MatchString(`\d+\.\d+\.\d+\.\d+`, ip); m && ip != LOCALHOST{
+			return ip
+		}
+	}
+
+	return ""
 }

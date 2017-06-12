@@ -15,24 +15,35 @@ import (
 
 func main() {
 
+	if len(os.Args) < 3 {
+		fmt.Println("\aUsage:\n\tInit:\t-i [port] [topo]\n\tJoin:\t-j [target_ip] [target_port]")
+		os.Exit(-1)
+	}
+
 	fmt.Println("Initiating R-NET v1.0.0\t[", time.Now() ,"]")
 	fmt.Println("Local Arch & OS:\t[", runtime.GOARCH, ":", runtime.GOOS,"]")
-	
+
 	/* flags multiplexer
-		-i : self initialization with [ip] [port] [topo]
+		-i : self initialization with [port] [topo]
 		-j : join on an existing node if known ip with [target_ip] [target_port]
+		-r : returning user
 		TODO: MORE CASES -s -l -a
 	*/
-	flag, ip, port := os.Args[1],os.Args[2],os.Args[3]
+	
+	flag, ip := os.Args[1], dht.Local_ip_4()
 
 	switch flag {
 	case "-i":
-		go dht.Self_init(ip, port, os.Args[4])
+		port, topo := os.Args[2], os.Args[3] 
+		go dht.Self_init(ip, port, topo)
 	case "-j":
-		fmt.Println("Loading Local State...")
+		port, tip := os.Args[3], os.Args[2] 
 		states := "" // load from local persistent file
- 		go dht.Want_to_join(ip, port, states)
-		fmt.Printf("Stated Updated, Starting Join on [%s:%s]\n", ip, port)
+ 		go dht.Want_to_join(tip, port, states)
+		fmt.Printf("Starting Join on [%s:%s]\n", tip, port)
+	case "-r":
+		fmt.Println("Fetching Local States...")
+		os.Exit(-1)
 	default:
 		fmt.Println("The System Does NOT Understand This Option, Exiting...")
 		os.Exit(-1)
