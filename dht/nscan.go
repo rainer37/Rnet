@@ -33,9 +33,23 @@ func Local_ip_4() string {
 
 		// check for ipv4 format
 		if m,_ := regexp.MatchString(`\d+\.\d+\.\d+\.\d+`, ip); m && ip != LOCALHOST{
+			fmt.Println(ip)
 			return ip
 		}
 	}
 
+	return ""
+}
+
+// get local MAC address
+// TODO: what if there is more than one
+func Local_MAC() string {
+	interfaces, _ := net.Interfaces()
+	for _, inter := range interfaces {
+		if inter.Name == "en0" {
+	         return inter.HardwareAddr.String()
+		}
+	}
+	fmt.Println("No MAC found.")
 	return ""
 }
