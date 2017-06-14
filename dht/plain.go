@@ -66,7 +66,8 @@ func (p *Plain_node) Join(ip string, port string) (uint8, error) {
 		fmt.Println(DHT_PREFIX+"Error on generating id")
 	}
 
-	conn, err := p.connect(ip+":"+ port)
+	//conn, err := p.connect(ip+":"+ port)
+	conn, err := net.Dial("tcp", ip+":"+ port)
 
 	if err != nil {
 		fmt.Println(DHT_PREFIX+"Cannot start connection to target address")
@@ -101,27 +102,11 @@ func (p *Plain_node) Send(conn net.Conn, msg string) (uint8, error) {
 /*          INDIVIDUAL FNs          */
 /************************************/
 
-// init the TCP connection to target ip and port.
-func (p *Plain_node) connect(addr string) (net.Conn, error) {
-	// setup address of local and remote
-	remoteAddr,_ := net.ResolveTCPAddr("tcp", addr)
-	localAddr,_ := net.ResolveTCPAddr("tcp", p.IP+":"+p.Port_string)
-
-	conn, err := net.DialTCP("tcp", localAddr, remoteAddr)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return conn, nil
-}
-
 // listen on local ip and port in the Node
 func (p *Plain_node) listen() {
 	l, err := net.Listen("tcp", p.IP+":"+p.Port_string)
 
 	if err != nil {
-		fmt.Println("Herererere")
 		eprint(err)
 		return
 	}
