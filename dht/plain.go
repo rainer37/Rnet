@@ -26,8 +26,10 @@ import (
 )
 
 var mutex = &sync.Mutex{}
-const PLAIN_OVERLAY string = "PLAIN_OVERLAY"
-
+const (
+	PLAIN_OVERLAY string = "PLAIN_OVERLAY"
+	APP_PREFIX byte = 'U'
+)
 type Plain_node struct {
 	Node
 	NList map[string]string // list of peers with their ip's
@@ -36,12 +38,11 @@ type Plain_node struct {
 func (p *Plain_node) Init(ip string, port string, extra ...string) (uint8, error) {
 		
 	p.IP = ip
-	p.ID = id_generate_4(p.IP, p.Port_string) 
 	p.Port_string = port
+	p.ID = id_generate_4(p.IP, p.Port_string) 
 	p.State = 1
 	p.NList = make(map[string]string)
-	p.NList["1234567891231111"] = "123.456.789.123:1111"
-	p.NList["2552552552551234"] = "255.255.255.255:1234"
+	p.NList[ip+":"+port] = p.ID
 
 	fmt.Printf("%sMy IP is [%s:%s] using [%s] as base arch\n", DHT_PREFIX, p.IP, p.Port_string, PLAIN_OVERLAY)
 
@@ -53,10 +54,11 @@ func (p *Plain_node) Init(ip string, port string, extra ...string) (uint8, error
 
 func (p *Plain_node) Join(ip string, port string) (uint8, error) {
 
-	fmt.Println(p.IP, p.Port_string)
+	fmt.Printf("%sLocal IP: [%s:%s]\n",DHT_PREFIX, p.IP, p.Port_string)
+	
 	id := id_generate_4(p.IP, p.Port_string) // generate id for new node
 
-	fmt.Printf("%sMy ID: [%s]\n", DHT_PREFIX, id)
+	fmt.Printf("%sLocal ID: [%s]\n", DHT_PREFIX, id)
 
 	p.ID = id
 
@@ -64,37 +66,64 @@ func (p *Plain_node) Join(ip string, port string) (uint8, error) {
 		fmt.Println(DHT_PREFIX+"Error on generating id")
 	}
 
-	// setup address of local and remote
-	remoteAddr,_ := net.ResolveTCPAddr("tcp", ip+":"+port)
-	localAddr,_ := net.ResolveTCPAddr("tcp", p.IP+":"+p.Port_string)
-
-	conn, err := net.DialTCP("tcp", localAddr, remoteAddr)
+	conn, err := p.connect(ip+":"+ port)
 
 	if err != nil {
 		fmt.Println(DHT_PREFIX+"Cannot start connection to target address")
 		return 1, err
 	}
-
 	// send J msg to the existing node for ack.
-	conn.Write([]byte("J "+p.ID+" "+p.IP+":"+p.Port_string))
+	p.Send(conn, "J "+p.ID+" "+p.IP+":"+p.Port_string)
 
 	// wait for the response.
-	p.handleRequest(conn)
+	err = p.handleRequest(conn)
 
+	if err != nil {
+		fmt.Println(DHT_PREFIX+"Did not receive ACK, cannot proceed to listen")
+		return 1, err
+	}
+
+	//set up done, enter the listening states
 	p.listen()
 
 	return 0, nil
 } 
 
+func (p *Plain_node) Send(conn net.Conn, msg string) (uint8, error) {
+	_, err := conn.Write([]byte(msg))
+	if err != nil {
+		return 1, err
+	}
+	return 0,nil
+}
+
 /************************************/
 /*          INDIVIDUAL FNs          */
 /************************************/
 
+// init the TCP connection to target ip and port.
+func (p *Plain_node) connect(addr string) (net.Conn, error) {
+	// setup address of local and remote
+	remoteAddr,_ := net.ResolveTCPAddr("tcp", addr)
+	localAddr,_ := net.ResolveTCPAddr("tcp", p.IP+":"+p.Port_string)
+
+	conn, err := net.DialTCP("tcp", localAddr, remoteAddr)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return conn, nil
+}
+
+// listen on local ip and port in the Node
 func (p *Plain_node) listen() {
 	l, err := net.Listen("tcp", p.IP+":"+p.Port_string)
 
 	if err != nil {
+		fmt.Println("Herererere")
 		eprint(err)
+		return
 	}
 
 	defer l.Close()
@@ -102,7 +131,7 @@ func (p *Plain_node) listen() {
 	fmt.Println(DHT_PREFIX+"Start Listening on ["+p.IP+":"+p.Port_string+"]")
 
 	// add self information to the map
-	p.NList[p.IP] = p.ID
+	p.NList[p.IP+":"+p.Port_string] = p.ID
 
 	// server start and ready for receiving msgs.
 	for {
@@ -125,7 +154,7 @@ func eprint(err error)  {
 
 // general server dispatcher
 // handler multiplexer.
-func (p *Plain_node) handleRequest(conn net.Conn) {
+func (p *Plain_node) handleRequest(conn net.Conn) error {
 	// Make a buffer to hold incoming data.
 	defer conn.Close()
 
@@ -136,7 +165,7 @@ func (p *Plain_node) handleRequest(conn net.Conn) {
 
 	if err != nil {
 		eprint(err)
-		return 
+		return err
 	}
 
 	msg := strings.Trim(string(buf), "\x00")
@@ -149,10 +178,17 @@ func (p *Plain_node) handleRequest(conn net.Conn) {
 		case 'A':
 			fmt.Println(DHT_PREFIX+"Join Ack Received.")
 			p.handle_join_ack(msg)
+		case 'B':
+			fmt.Println(DHT_PREFIX+"Newbie joined.")
+			p.add_newbie(msg)
+		case APP_PREFIX:
+			fmt.Println(DHT_PREFIX+"Application Data Received.")
 		default:
 			fmt.Println(DHT_PREFIX+"Unknown msg format")
 			conn.Write([]byte("Don't Know What You Mean by"+msg))
 	}
+
+	return nil
 }
 
 // generate the id by the ipv4 address and port number
@@ -204,15 +240,32 @@ func (p *Plain_node) handle_join(msg string, conn net.Conn) {
 	ip := str[2]
 
 	mutex.Lock()
-	p.NList[id] = ip
+	p.NList[ip] = id
 	mutex.Unlock()
 
 	fmt.Printf("%sWelcome [%s]\n", DHT_PREFIX, id)
-	fmt.Println(p.NList)
-	
+	p.print_peers()
+
 	nlist := p.generate_nlist()
 
-	conn.Write([]byte("A "+nlist))
+	// TODO: make it concurrent
+
+	for i,_ := range p.NList {
+		if i != ip && i != p.IP+":"+p.Port_string {
+			fmt.Println(i,"doesn't know",ip)
+			c,err := net.Dial("tcp", i)
+			if c == nil {
+				eprint(err)
+				// forget it if not connectable
+				continue
+			}
+			p.Send(c, "B "+id+" "+ip)
+			c.Close()
+		}
+	}
+
+	p.Send(conn, "A "+nlist)
+	//conn.Write([]byte("A "+nlist))
 }
 
 /*
@@ -231,7 +284,8 @@ func (p *Plain_node) handle_join_ack(msg string) {
 
 	peers := strings.Split(str[1], "&")
 
-	fmt.Println("Current map", p.NList)
+	fmt.Println("Current map")
+	p.print_peers()
 
 	// parse nlist received and update local nlist map
 	for _, idip := range peers {
@@ -239,12 +293,38 @@ func (p *Plain_node) handle_join_ack(msg string) {
 		p.NList[id_ip[0]] = id_ip[1]
 	}
 
-	fmt.Println("After map", p.NList)
+	fmt.Println("After map")
+	p.print_peers()
 
 	p.State = 1 // 1 for normally RUNNING
 
 	fmt.Println(DHT_PREFIX+"Join Succeed.")
 }
 
+func (p *Plain_node) add_newbie(msg string) {
+	fmt.Println(msg)
+	str := strings.Split(msg, " ")
 
+	if len(str) < 3 {
+		fmt.Println("Too few inforamtion received, aborting updating NList")
+		return 
+	}
+
+	id := str[1]
+	ip := str[2]
+
+	mutex.Lock()
+	p.NList[ip] = id
+	mutex.Unlock()
+
+	p.print_peers()
+}
+
+func (p *Plain_node) print_peers() {
+	c := 0
+	for i,v := range p.NList {
+		fmt.Printf("[%d]: [%s:%s]\n", c, i, v)
+		c++
+	}
+}
 

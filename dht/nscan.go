@@ -12,7 +12,7 @@ package dht
 import (
 	"fmt"
 	"net"
-	"strings"
+	//"strings"
 	"regexp"
 )
 
@@ -29,12 +29,11 @@ func Local_ip_4() string {
 	faces, _ := net.InterfaceAddrs()
 
 	for _,v := range faces {
-		ip := v.String()[:strings.Index(v.String(), "/")]
-
+		ip,_,_ := net.ParseCIDR(v.String())
 		// check for ipv4 format
-		if m,_ := regexp.MatchString(`\d+\.\d+\.\d+\.\d+`, ip); m && ip != LOCALHOST{
+		if m,_ := regexp.MatchString(`\d+\.\d+\.\d+\.\d+`, ip.String()); m && ip.String() != LOCALHOST{
 			fmt.Println(ip)
-			return ip
+			return ip.String()
 		}
 	}
 

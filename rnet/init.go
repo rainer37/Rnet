@@ -13,10 +13,14 @@ import (
 	"github.com/rainer37/Rnet/transport"
 )
 
+func load_local_states() {
+
+}
+
 func main() {
 
 	if len(os.Args) < 3 {
-		fmt.Println("\aUsage:\n\tInit:\t-i [port] [topo]\n\tJoin:\t-j [target_ip] [target_port]")
+		fmt.Println("\aUsage:\n\tInit:\t-i [port] [topo]\n\tJoin:\t-j [target_ip] [target_port] [my_port]")
 		os.Exit(-1)
 	}
 
@@ -25,7 +29,7 @@ func main() {
 
 	/* flags multiplexer
 		-i : self initialization with [port] [topo]
-		-j : join on an existing node if known ip with [target_ip] [target_port]
+		-j : join on an existing node if known ip with [target_ip] [target_port] [my_port]
 		-r : returning user
 		TODO: MORE CASES -s -l -a
 	*/
@@ -37,9 +41,9 @@ func main() {
 		port, topo := os.Args[2], os.Args[3] 
 		go dht.Self_init(ip, port, topo)
 	case "-j":
-		port, tip := os.Args[3], os.Args[2] 
+		port, tip, my_port := os.Args[3], os.Args[2], os.Args[4]
 		states := "" // load from local persistent file
- 		go dht.Want_to_join(tip, port, states)
+ 		go dht.Want_to_join(tip, port, states, my_port)
 		fmt.Printf("Starting Join on [%s:%s]\n", tip, port)
 	case "-r":
 		fmt.Println("Fetching Local States...")

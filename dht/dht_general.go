@@ -21,6 +21,7 @@ package dht
 import (
 	"os"
 	"fmt"
+	"net"
 )
 
 // basic node structure.
@@ -57,10 +58,10 @@ type D_node interface {
 	/*
 		Send the data to the peer
 
-		Send(ip string, port string, msg []byte) (opStatus int, err error)
+		Send(conn net.Conn, msg string) (opStatus int, err error)
 	*/
 
-	// Send(string, int, []byte) (int, error)
+	Send(net.Conn, string) (int, error)
 
 }
 
@@ -68,7 +69,8 @@ type D_node interface {
 func Self_init(ip string, port string, topo string) error {
 
 	fmt.Println(DHT_PREFIX+"Main DHT Dispatcher Initiated")
-	
+	load_from_states_string("")
+
 	switch topo {
 	case PLAIN_TOPO:
 		d_node := new(Plain_node)
@@ -84,13 +86,18 @@ func Self_init(ip string, port string, topo string) error {
 	return nil
 }
 
+// auto join or liveness check for the returning user.
+func Auto_join(states string) error {
+	return nil
+}
+
 // Join wrapper
-func Want_to_join(ip string, port string, states string) error {
+func Want_to_join(ip string, port string, states string, my_port string) error {
 
 	p := new(Plain_node)
 
 	p.IP = Local_ip_4()
-	p.Port_string = "8080"
+	p.Port_string = my_port
 	p.State = 0
 	p.NList = make(map[string]string)
 
