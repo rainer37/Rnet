@@ -11,6 +11,7 @@ import (
 	"time"
 	"github.com/rainer37/Rnet/dht"
 	"github.com/rainer37/Rnet/transport"
+	ac "github.com/rainer37/Rnet/acontroller"
 )
 
 func load_local_states() {
@@ -57,11 +58,22 @@ func main() {
 	transport.Fib(4)
 
 
+	// simple client shell
 	for {
-		var op int
-		fmt.Scanf("%d\n", &op)
-		if op == 0 {
+		fmt.Print("Rnet:~$ ")
+		var op string
+		fmt.Scanf("%s\n", &op)
+		switch op {
+		case "exit":
 			os.Exit(-1)
+		case "ls":
+			ac.Get_app_list()
+		case "dht":
+			dht.Print()
+		case "":
+			fmt.Println()
+		default:
+			fmt.Println("Unknown CMD.")
 		}
 	}
 }

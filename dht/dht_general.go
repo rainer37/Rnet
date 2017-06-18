@@ -69,7 +69,6 @@ type D_node interface {
 func Self_init(ip string, port string, topo string) error {
 
 	fmt.Println(DHT_PREFIX+"Main DHT Dispatcher Initiated")
-	load_from_states_string("")
 
 	switch topo {
 	case PLAIN_TOPO:

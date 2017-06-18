@@ -6,7 +6,7 @@ package dht
 	The design does not provide ANY fault-tolerance at all...
 
 	Routing Table format:
-		[ID : IP]
+		[IP : ID]
 
 	ID space: string (127.0.0.1:1338 => 1270000000011338)
 	IP space: normal (assuming unique and persistent IPv4)
@@ -15,7 +15,8 @@ package dht
 		1. Send IP to any existing node in system with msg starting with 'J' ID and ip:port.
 		2. Responding peer replies with 'A' as acknowlegement, and the NLIST from peer to
 		   Update local NLIST.
-		3. Joining routine done. 
+		3. Broadcast to everyone.
+		4. Joining routine done. 
 */
 
 import (
@@ -26,13 +27,24 @@ import (
 )
 
 var mutex = &sync.Mutex{}
+var cur_node *Plain_node = nil
+
 const (
 	PLAIN_OVERLAY string = "PLAIN_OVERLAY"
 	APP_PREFIX byte = 'U'
 )
+
 type Plain_node struct {
 	Node
 	NList map[string]string // list of peers with their ip's
+}
+
+func Get() *Plain_node {
+	return cur_node
+}
+
+func Print() {
+	fmt.Printf("IP:\t[%s]\tPORT:\t[%s]\nSTATE:\t[%d]\t\t\tID:\t[%s]\n", cur_node.IP, cur_node.Port_string, cur_node.State, cur_node.ID)
 }
 
 func (p *Plain_node) Init(ip string, port string, extra ...string) (uint8, error) {
@@ -43,6 +55,8 @@ func (p *Plain_node) Init(ip string, port string, extra ...string) (uint8, error
 	p.State = 1
 	p.NList = make(map[string]string)
 	p.NList[ip+":"+port] = p.ID
+
+	cur_node = p
 
 	fmt.Printf("%sMy IP is [%s:%s] using [%s] as base arch\n", DHT_PREFIX, p.IP, p.Port_string, PLAIN_OVERLAY)
 
@@ -61,6 +75,8 @@ func (p *Plain_node) Join(ip string, port string) (uint8, error) {
 	fmt.Printf("%sLocal ID: [%s]\n", DHT_PREFIX, id)
 
 	p.ID = id
+
+	cur_node = p
 
 	if id == "0" {
 		fmt.Println(DHT_PREFIX+"Error on generating id")
