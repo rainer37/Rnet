@@ -22,6 +22,7 @@ import (
 	"os"
 	"fmt"
 	"net"
+	"errors"
 )
 
 // basic node structure.
@@ -61,7 +62,7 @@ type D_node interface {
 		Send(conn net.Conn, msg string) (opStatus int, err error)
 	*/
 
-	Send(net.Conn, string) (int, error)
+	Send(net.Conn, string) (uint8, error)
 
 }
 
@@ -70,18 +71,20 @@ func Self_init(ip string, port string, topo string) error {
 
 	fmt.Println(DHT_PREFIX+"Main DHT Dispatcher Initiated")
 
-	switch topo {
-	case PLAIN_TOPO:
-		d_node := new(Plain_node)
-		_, err := d_node.Init(ip, port)
-		if err != nil {
-			return err
-		}
-	default:
+	// dispatch the actual topo node
+	var d_node D_node = dispatch(topo)
+
+	if d_node == nil {
 		fmt.Println(DHT_PREFIX+"Unknown Topology Provided, System Exiting...")
-		os.Exit(-1)
+		return errors.New("Unknown Topology...")	
 	}
-	
+
+	// start initialize the network.
+	_, err := d_node.Init(ip, port)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -93,6 +96,7 @@ func Auto_join(states string) error {
 // Join wrapper
 func Want_to_join(ip string, port string, states string, my_port string) error {
 
+	// TODO: finish loadfromstates and pop topo from it to dispatch.
 	p := new(Plain_node)
 
 	p.IP = Local_ip_4()
@@ -111,4 +115,18 @@ func Want_to_join(ip string, port string, states string, my_port string) error {
 
 func load_from_states_string(states string) {
 
+}
+
+// dispatcher for d_node.
+func dispatch(topo string) (d_node D_node) {
+	switch topo {
+	case PLAIN_TOPO:
+		d_node = new(Plain_node)
+	case CHORD_TOPO:
+		//s_node := new(Chord_node)
+	default:
+		fmt.Println(DHT_PREFIX+"Cannot dispatch!")
+		d_node = nil
+	}
+	return
 }

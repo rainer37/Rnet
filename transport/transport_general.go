@@ -4,6 +4,9 @@ import (
 	"fmt"
 )
 
-func Fib(n int) {
-	fmt.Printf("Fib %d is %d\n", n, n+1)
-}
+const TRANS_PREFIX string = "[TRANS] "
+
+func Trans_Boot() {
+	fmt.Println(TRANS_PREFIX+"Transport Communication Unit Booting...")
+} 
+

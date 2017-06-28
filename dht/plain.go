@@ -115,7 +115,7 @@ func (p *Plain_node) Send(conn net.Conn, msg string) (uint8, error) {
 }
 
 /************************************/
-/*          INDIVIDUAL FNs          */
+/*   PLAING INDIVIDUAL FNs          */
 /************************************/
 
 // listen on local ip and port in the Node
@@ -186,7 +186,7 @@ func (p *Plain_node) handleRequest(conn net.Conn) error {
 			fmt.Println(DHT_PREFIX+"Application Data Received.")
 		default:
 			fmt.Println(DHT_PREFIX+"Unknown msg format")
-			conn.Write([]byte("Don't Know What You Mean by"+msg))
+		//	conn.Write([]byte("Don't Know What You Mean by"+msg))
 	}
 
 	return nil

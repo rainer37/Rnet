@@ -11,7 +11,10 @@ package acontroller
 
 import(
 	"fmt"
+	"os/exec"
+	"os"
 )
+const AC_PREFIX string = "[AC] "
 
 var apps map[string]App = make(map[string]App)
 
@@ -20,7 +23,7 @@ type App struct {
 	name, path, version, author, state, description string
 }
 
-type Rapp interface {
+type R_app interface {
 	Boot()
 	Send(msg string,address_or_id string)
 	Self_report()
@@ -29,7 +32,22 @@ type Rapp interface {
 // ini func to refresh the local application states and metadata.
 // TODO:
 func AC_boot() {
-	fmt.Println("Application Controller Booting...")
+	fmt.Println(AC_PREFIX+"Application Controller Booting...")
+	/*
+		build/compile the new applications.
+	*/
+
+	apps = make(map[string]App)
+	output, err := exec.Command("go","build", "./app/chatchat/chat.go").CombinedOutput()
+	if err != nil {
+		os.Stderr.WriteString(err.Error())
+	}
+	fmt.Println(string(output))
+	output, err = exec.Command("gnome-terminal","-e", "./chat").CombinedOutput()
+	if err != nil {
+		os.Stderr.WriteString(err.Error())
+	}
+	fmt.Println(string(output))
 }
 
 // get all locally installed application from app_list.json

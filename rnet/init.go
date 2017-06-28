@@ -55,16 +55,20 @@ func main() {
 	}
 
 
-	transport.Fib(4)
+	
 
-
+	time.Sleep(1 * time.Second)
+	
+	transport.Trans_Boot()
+	// booting the App controller
+	ac.AC_boot()
 	// simple client shell
 	for {
 		fmt.Print("Rnet:~$ ")
 		var op string
 		fmt.Scanf("%s\n", &op)
 		switch op {
-		case "exit":
+		case "exit","0":
 			os.Exit(-1)
 		case "ls":
 			ac.Get_app_list()
