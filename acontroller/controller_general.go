@@ -14,7 +14,7 @@ import(
 	"os/exec"
 	"os"
 )
-const AC_PREFIX string = "[AC] "
+const AC_PREFIX string = "[APC]\t"
 const appdir string = "./app/"
 
 var apps map[string]App = make(map[string]App)
@@ -37,7 +37,6 @@ func AC_boot() {
 	/*
 		build/compile the new applications.
 	*/
-
 	apps = make(map[string]App)
 	build_app("chatchat/chat")
 
@@ -47,7 +46,7 @@ func AC_boot() {
 func build_app(source string) {
 	output, err := exec.Command("go","build", "-o", appdir+source, appdir+source+".go").CombinedOutput()
 	if err != nil {
-		os.Stderr.WriteString(err.Error())
+		os.Stderr.WriteString("1"+err.Error())
 	}
 	fmt.Println(string(output))
 }

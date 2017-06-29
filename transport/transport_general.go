@@ -14,21 +14,32 @@ package transport
 import (
 	"fmt"
 	"net"
+	"os"
+	"github.com/rainer37/Rnet/dht"
 )
 
-const SOCKET_ADDR = "/tmp/go.sock"
-const TRANS_PREFIX string = "[TRANS] "
+const TRANS_PREFIX string = "[TNS]\t"
 
 type UDS struct {
 	Socket_adr string // socket path.
 	App_name string // binding application's name
 }
 
-func Trans_Boot() {
-	fmt.Println(TRANS_PREFIX+"Transport Communication Unit Booting...")
+var SOCKET_ADDR string = os.Getenv("PWD")+"/go.sock"
+var lnn net.Listener // pointer to listener
+
+func Trans_Boot(id string) {
+	fmt.Println(TRANS_PREFIX+"Transport Communication Unit Booting..."+id)
 	Listen_UDS()
 } 
 
+// close the UDS listener.
+func Close_ln() {
+	if lnn != nil {
+		lnn.Close()
+	}
+	fmt.Println(TRANS_PREFIX+"UDS Listener Closed.")
+}
 /*
 	target_addr : remote peer address (IP/?)
 
@@ -59,21 +70,22 @@ func Send_UDS(target_addr string, msg string) {
 func Listen_UDS() {
 	fmt.Println(TRANS_PREFIX+"Starting UDS server")
 	
+	// remove previous socket.
+	os.Remove(SOCKET_ADDR)
+
 	ln, err := net.Listen("unix", SOCKET_ADDR)
+	lnn = ln
 
 	if err != nil {
 		fmt.Println(TRANS_PREFIX+"Listen error: ", err)
 		return
 	}
 
-	defer func (ln net.Listener) {
-		fmt.Println(TRANS_PREFIX+"Closing Socket")
-		ln.Close()
-	}(ln)
+	defer ln.Close()
 
 	for {
 		sock, err := ln.Accept()
-		
+
 		if err != nil {
 			fmt.Println(TRANS_PREFIX+"Accept error: ", err)
 			break
@@ -93,7 +105,9 @@ func handle_UDS_request(c net.Conn) {
 		}
 
 		data := buf[0:nr]
-		fmt.Println("Server got:", string(data))
+		fmt.Println(TRANS_PREFIX+"Server got:", string(data))
+
+		dht.Send_DHT("",string(data))
 		// _, err = c.Write(data)
 		// if err != nil {
 		// 	fmt.Println("Writing client error: ", err)

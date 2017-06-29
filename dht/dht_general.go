@@ -113,6 +113,22 @@ func Want_to_join(ip string, port string, states string, my_port string) error {
 	return nil
 }
 
+// communication between DHT nodes.
+// ??? why do i even need this level of abstraction
+func Send_DHT(target_addr string, msg string) {
+	node := Get()
+	fmt.Println(node.IP)
+
+	conn, err := net.Dial("tcp", "192.168.31.205:1338")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(-1)
+	}
+
+	conn.Write([]byte(msg))
+}
+
 func load_from_states_string(states string) {
 
 }

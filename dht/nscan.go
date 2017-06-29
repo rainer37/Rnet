@@ -12,7 +12,6 @@ package dht
 import (
 	"fmt"
 	"net"
-	//"strings"
 	"regexp"
 )
 
@@ -32,7 +31,7 @@ func Local_ip_4() string {
 		ip,_,_ := net.ParseCIDR(v.String())
 		// check for ipv4 format
 		if m,_ := regexp.MatchString(`\d+\.\d+\.\d+\.\d+`, ip.String()); m && ip.String() != LOCALHOST{
-			fmt.Println(ip)
+			//fmt.Println(ip)
 			return ip.String()
 		}
 	}

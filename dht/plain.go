@@ -28,6 +28,7 @@ import (
 
 var mutex = &sync.Mutex{}
 var cur_node *Plain_node = nil
+var gconn *net.Conn
 
 const (
 	PLAIN_OVERLAY string = "PLAIN_OVERLAY"
