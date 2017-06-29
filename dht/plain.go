@@ -185,12 +185,19 @@ func (p *Plain_node) handleRequest(conn net.Conn) error {
 			p.add_newbie(msg)
 		case APP_PREFIX:
 			fmt.Println(DHT_PREFIX+"Application Data Received.")
+			forward_to_app(msg)
 		default:
 			fmt.Println(DHT_PREFIX+"Unknown msg format")
 		//	conn.Write([]byte("Don't Know What You Mean by"+msg))
 	}
 
 	return nil
+}
+
+func forward_to_app(msg string) {
+	m := strings.Split(msg, " ")
+	sock := m[2][strings.Index(m[2],":"):]
+	fmt.Println(sock)
 }
 
 // generate the id by the ipv4 address and port number

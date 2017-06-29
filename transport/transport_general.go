@@ -30,7 +30,7 @@ var lnn net.Listener // pointer to listener
 
 func Trans_Boot(id string) {
 	fmt.Println(TRANS_PREFIX+"Transport Communication Unit Booting..."+id)
-	Listen_UDS()
+	Listen_UDS(SOCKET_ADDR, DHT_UDS_handler)
 } 
 
 // close the UDS listener.
@@ -40,6 +40,7 @@ func Close_ln() {
 	}
 	fmt.Println(TRANS_PREFIX+"UDS Listener Closed.")
 }
+
 /*
 	target_addr : remote peer address (IP/?)
 
@@ -64,16 +65,17 @@ func Send_UDS(target_addr string, msg string) {
 	fmt.Println(TRANS_PREFIX+"Sending:", msg)
 
 }
+
 /*
-	Listen for local application communication data.
+	Listen for local application/DHT communication data.
 */
-func Listen_UDS() {
+func Listen_UDS(uds_addr string, handler func(net.Conn)) {
 	fmt.Println(TRANS_PREFIX+"Starting UDS server")
 	
 	// remove previous socket.
-	os.Remove(SOCKET_ADDR)
+	os.Remove(uds_addr)
 
-	ln, err := net.Listen("unix", SOCKET_ADDR)
+	ln, err := net.Listen("unix", uds_addr)
 	lnn = ln
 
 	if err != nil {
@@ -91,26 +93,29 @@ func Listen_UDS() {
 			break
 		}
 
-		go handle_UDS_request(sock)
+		go handler(sock)
 	}
 }
 
-func handle_UDS_request(c net.Conn) {
-		defer c.Close()
-	//for {
-		buf := make([]byte, 1024)
-		nr, err := c.Read(buf)
-		if err != nil {
-			return
-		}
+/*
+	handle message from applications 
+	(and forward to DHT network for inter-DHT communication)
 
-		data := buf[0:nr]
-		fmt.Println(TRANS_PREFIX+"Server got:", string(data))
+	TODO: application data encoding unit.
+*/
+func DHT_UDS_handler(c net.Conn) {
+	defer c.Close()
+	buf := make([]byte, 1024)
+	nr, err := c.Read(buf)
+	if err != nil {
+		return
+	}
 
-		dht.Send_DHT("",string(data))
-		// _, err = c.Write(data)
-		// if err != nil {
-		// 	fmt.Println("Writing client error: ", err)
-		// }
-	//}
+	data := buf[0:nr]
+	sock := string(data[len(data)-8:])
+
+	fmt.Println(TRANS_PREFIX+"Server got:", string(data), sock)
+
+	// send data over internet DHT nodes.
+	dht.Send_DHT("192.168.31.205:1338",string(data))
 }

@@ -119,14 +119,14 @@ func Send_DHT(target_addr string, msg string) {
 	node := Get()
 	fmt.Println(node.IP)
 
-	conn, err := net.Dial("tcp", "192.168.31.205:1338")
+	conn, err := net.Dial("tcp", target_addr)
 
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(-1)
 	}
 
-	conn.Write([]byte(msg))
+	conn.Write([]byte("A "+msg))
 }
 
 func load_from_states_string(states string) {
