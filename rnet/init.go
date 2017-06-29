@@ -27,7 +27,7 @@ func main() {
 
 	fmt.Println("Initiating R-NET v1.0.0\t[", time.Now() ,"]")
 	fmt.Println("Local Arch & OS:\t[", runtime.GOARCH, ":", runtime.GOOS,"]")
-
+	fmt.Printf("PID: [%d]\n", os.Getpid())
 	/* flags multiplexer
 		-i : self initialization with [port] [topo]
 		-j : join on an existing node if known ip with [target_ip] [target_port] [my_port]
@@ -59,7 +59,7 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 	
-	transport.Trans_Boot()
+	go transport.Trans_Boot()
 	// booting the App controller
 	ac.AC_boot()
 	// simple client shell
@@ -76,6 +76,8 @@ func main() {
 			dht.Print()
 		case "":
 			fmt.Println()
+		case "1":
+			ac.Exec_app("chatchat/chat")
 		default:
 			fmt.Println("Unknown CMD.")
 		}

@@ -15,6 +15,7 @@ import(
 	"os"
 )
 const AC_PREFIX string = "[AC] "
+const appdir string = "./app/"
 
 var apps map[string]App = make(map[string]App)
 
@@ -38,17 +39,26 @@ func AC_boot() {
 	*/
 
 	apps = make(map[string]App)
-	output, err := exec.Command("go","build", "./app/chatchat/chat.go").CombinedOutput()
-	if err != nil {
-		os.Stderr.WriteString(err.Error())
-	}
-	fmt.Println(string(output))
-	output, err = exec.Command("gnome-terminal","-e", "./chat").CombinedOutput()
+	build_app("chatchat/chat")
+
+
+}
+
+func build_app(source string) {
+	output, err := exec.Command("go","build", "-o", appdir+source, appdir+source+".go").CombinedOutput()
 	if err != nil {
 		os.Stderr.WriteString(err.Error())
 	}
 	fmt.Println(string(output))
 }
+
+func Exec_app(source string) {
+	output, err := exec.Command("gnome-terminal","-e", appdir+source).CombinedOutput()
+	if err != nil {
+		os.Stderr.WriteString(err.Error())
+	}
+	fmt.Println(string(output))
+}	
 
 // get all locally installed application from app_list.json
 // TODO: format of json
