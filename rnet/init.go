@@ -10,8 +10,8 @@ import (
 	"runtime"
 	"time"
 	"github.com/rainer37/Rnet/dht"
-	"github.com/rainer37/Rnet/transport"
-	ac "github.com/rainer37/Rnet/acontroller"
+	//"github.com/rainer37/Rnet/transport"
+	ac "github.com/rainer37/Rnet/apctl"
 )
 
 func load_local_states() {
@@ -38,18 +38,15 @@ func main() {
 		TODO: MORE CASES -s -l -a
 	*/
 
-	var por string
 	flag, ip := os.Args[1], loc_ip
 
 	switch flag {
 	case "-i":
 		port, topo := os.Args[2], os.Args[3]
-		por = port 
 		go dht.Self_init(ip, port, topo)
 	case "-j":
 		port, tip, my_port := os.Args[3], os.Args[2], os.Args[4]
 		states := "" // load from local persistent file
- 		por = my_port
  		go dht.Want_to_join(tip, port, states, my_port)
 		fmt.Printf("Starting Join on [%s:%s]\n", tip, port)
 	case "-r":
@@ -60,12 +57,13 @@ func main() {
 		os.Exit(-1)
 	}
 
-	time.Sleep(1 * time.Second) // wait for 1s for nice fmt.
 	
-	go transport.Trans_Boot(por)
 	// booting the App controller
-	ac.AC_boot()
+	go ac.AC_boot()
 	// simple client shell
+
+	time.Sleep(1 * time.Second) // wait for 1s for nice fmt.
+
 	for {
 		fmt.Print("Rnet:r$ ")
 		var op string
@@ -73,7 +71,7 @@ func main() {
 
 		switch op {
 		case "exit","0","q","quit":
-			transport.Close_ln()
+			ac.Close_apc_uds_ln()
 			os.Exit(-1)
 		case "ls":
 			ac.Get_app_list()

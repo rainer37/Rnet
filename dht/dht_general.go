@@ -39,6 +39,8 @@ const	(
 	DHT_PREFIX string = "[DHT]\t"
 )
 
+var SOCKET_ADDR string = os.Getenv("PWD")+"/go.sock"
+
 // DHT node interface
 type D_node interface {
 	
@@ -115,18 +117,19 @@ func Want_to_join(ip string, port string, states string, my_port string) error {
 
 // communication between DHT nodes.
 // ??? why do i even need this level of abstraction
-func Send_DHT(target_addr string, msg string) {
+func Send_to_ext_DHT(target_addr string, msg string) {
 	node := Get()
 	fmt.Println(node.IP)
 
 	conn, err := net.Dial("tcp", target_addr)
+	defer conn.Close()
 
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(-1)
 	}
 
-	conn.Write([]byte("A "+msg))
+	conn.Write([]byte("U "+msg))
 }
 
 func load_from_states_string(states string) {
@@ -145,4 +148,24 @@ func dispatch(topo string) (d_node D_node) {
 		d_node = nil
 	}
 	return
+}
+
+/*
+	forward raw internet data to application UDS.
+*/
+func forward_to_app(msg string) {
+	conn, err := net.Dial("unix", SOCKET_ADDR)
+
+	if err != nil {
+		fmt.Println(DHT_PREFIX+"UDS Dial error", err)
+		return
+	}
+
+	defer conn.Close()
+
+	_, err = conn.Write([]byte(msg))
+	if err != nil {
+		fmt.Println(DHT_PREFIX+"Send error:", err)
+		return
+	}
 }

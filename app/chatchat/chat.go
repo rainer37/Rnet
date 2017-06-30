@@ -26,7 +26,7 @@ func echo_handler(c net.Conn) {
 
 func receive() {
 	for {
-		transport.Listen_UDS("chat.sock", echo_handler)
+		//transport.Listen_UDS("chat.sock", echo_handler)
 	}
 }
 
@@ -37,6 +37,6 @@ func main() {
 		var cmd string
 		fmt.Scanf("%s", &cmd)
 		
-		transport.Send_UDS("", cmd+":chat.sock")
+		transport.Send_to_UDS("", cmd+":chat.sock")
 	}
 }

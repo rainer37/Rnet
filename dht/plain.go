@@ -194,12 +194,6 @@ func (p *Plain_node) handleRequest(conn net.Conn) error {
 	return nil
 }
 
-func forward_to_app(msg string) {
-	m := strings.Split(msg, " ")
-	sock := m[2][strings.Index(m[2],":"):]
-	fmt.Println(sock)
-}
-
 // generate the id by the ipv4 address and port number
 // ex. 192.168.0.1:1338 => 1921680000011338
 // return string id or 0 for failure
