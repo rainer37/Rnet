@@ -6,7 +6,7 @@ package apctl
 		1. display meta of application.
 		2. terminate/execute applications.
 		3. application state maintain.
-		4. APP to DHT communication.
+		4. APC to DHT communication.
 
 */
 
@@ -15,20 +15,22 @@ import(
 	"os/exec"
 	"os"
 	"net"
-	"strings"
+	"io/ioutil"
 	"github.com/rainer37/Rnet/dht"
 )
 
 const AC_PREFIX string = "[APC]\t"
 const appdir string = "./app/"
 
-var apps map[string]App = make(map[string]App)
+var apps map[string]App = make(map[string]App) // name to App mapping.
+var friends map[string]string = make(map[string]string) // fname:ip.
 var SOCKET_ADDR string = os.Getenv("PWD")+"/go.sock"
 var global_ln net.Listener 
 
 type App struct {
 	name string
 	sock string
+	desp string // description of application
 }
 
 // ini func to refresh the local application states and metadata.
@@ -39,87 +41,79 @@ func AC_boot() {
 		build/compile the new applications.
 	*/
 	apps = make(map[string]App)
-	build_app("chatchat/chat")
+	//build_app("chat/chat")
+
+	get_local_apps()
 
 	// listen for global UDS for comm from all applications
 	Listen_UDS(SOCKET_ADDR, DHT_UDS_handler)
 }
-
-func build_app(source string) {
-	_, err := exec.Command("go","build", "-o", appdir+source, appdir+source+".go").CombinedOutput()
-	if err != nil {
-		os.Stderr.WriteString("1"+err.Error())
-	}
-	//fmt.Println(string(output))
-}
-
-func Exec_app(source string) {
-	output, err := exec.Command("gnome-terminal","-e", appdir+source).CombinedOutput()
-	if err != nil {
-		os.Stderr.WriteString(err.Error())
-	}
-	fmt.Println(string(output))
-}	
 
 // get all locally installed application from app_list.json
 // TODO: format of json
 func Get_app_list() {
 
 	for i,v := range apps {
-		fmt.Printf("%s : %s", i, v.name)
-		// TODO: read from apps map.
+		fmt.Printf("[ %s ] : %s\n", i, v.desp)
 	}
 
-	fmt.Println("Sample APP 1: Chat with your friend")
-	fmt.Println("Sample APP 2: Restaurant Nearby")
-	fmt.Println("Sample APP 3: Where am i")
 }
 
+func Get_friends() string {
+	peers := dht.Peer_list()
+	var ps string = ""
 
-/*
-	Forward the data from outside to the local application
-	through UDS. 
-*/
-func Dispatch_app_data(msg string) {
-	fmt.Println(msg)
-	m := strings.Split(msg, " ")
-	amsg := m[1][:strings.Index(m[1],":")-1]
-	sock := m[1][strings.Index(m[1],":"):]
-	fmt.Println(sock, amsg)
-}
+	for _,v := range peers {
+		ps = ps + " " + v
+	}
 
-
-/*
-	Forward app data to DHT through UDS.
-*/
-func Release_app_data(msg string) {
-		// send data over internet DHT nodes.
-	dht.Send_to_ext_DHT("192.168.31.205:1338",msg)
+	return ps
 }
 
 /*
-	handle message from applications/DHT
-
-	TODO: application data encoding unit.
+	check all applications in the appdir, and build them all.
 */
-func DHT_UDS_handler(c net.Conn) {
-	defer c.Close()
-	buf := make([]byte, 1024)
-	nr, err := c.Read(buf)
+func get_local_apps() {
+	app_files, _ := ioutil.ReadDir(appdir)
+	size := 0
+	for _, f := range app_files {
+		//fmt.Println(f.Name())
+		apps[f.Name()] = App{
+			f.Name(),
+		 	appdir+"/"+f.Name()+"/"+f.Name()+".sock",
+		 	f.Name()+" is amazing",
+		}
+		build_app(f.Name())
+		size++
+	}
+
+	fmt.Printf(AC_PREFIX+"%d appplications found.\n", size)
+}
+
+/*
+	build go application from source code with same name.
+*/
+func build_app(source string) {
+	_, err := exec.Command("go","build", "-o", appdir+source+"/"+source, appdir+source+"/"+source+".go").CombinedOutput()
 	if err != nil {
-		return
+		os.Stderr.WriteString("1"+err.Error())
 	}
-
-	data := string(buf[0:nr])
-
-	fmt.Println(AC_PREFIX+"Server got:", data)
-	//return
-
-	if string(data)[0] == 'U' {
-		Dispatch_app_data(data)
-	} else {
-		Release_app_data(data)
-	}
-	
+	//fmt.Println(string(output))
 }
 
+/*
+	execute an executable, it does not have to be a go app.
+*/
+func Exec_app(source string) error {
+	_, err := exec.Command("gnome-terminal","-e", appdir+source+"/"+source ).CombinedOutput()
+	if err != nil {
+		os.Stderr.WriteString(err.Error())
+		return err
+	}
+	return nil
+	//fmt.Println(string(output))
+}	
+
+func get_appsock_by_name(appname string) string {
+	return apps[appname].sock
+}

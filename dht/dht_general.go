@@ -12,10 +12,6 @@ package dht
 	SEND
 	LEAVE
 	REPORT
-	.
-	.
-	.
-	
 */
 
 import (
@@ -31,6 +27,12 @@ type Node struct {
 	State uint
 	Port_string string
 	ID string
+	NList interface{}
+}
+
+type Peer struct {
+	peer_id string // peer's unique id
+	addr string
 }
 
 const	(
@@ -40,6 +42,7 @@ const	(
 )
 
 var SOCKET_ADDR string = os.Getenv("PWD")+"/go.sock"
+var peers map[string]Peer // potential peers maybe
 
 // DHT node interface
 type D_node interface {

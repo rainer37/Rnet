@@ -7,13 +7,14 @@ package main
 import(
 	"fmt"
 	"net"
-	"github.com/rainer37/Rnet/transport"
+	"github.com/rainer37/Rnet/rapi"
 )
 
 var app_id int = 1000
 
 func echo_handler(c net.Conn) {
 	defer c.Close()
+
 	buf := make([]byte, 1024)
 	nr, err := c.Read(buf)
 	if err != nil {
@@ -26,17 +27,22 @@ func echo_handler(c net.Conn) {
 
 func receive() {
 	for {
-		//transport.Listen_UDS("chat.sock", echo_handler)
+		rapi.Serve(echo_handler)
 	}
 }
 
 func main() {
 	fmt.Println("Sample Chatting App Version 1.0 started")
 	
+	rapi.Peers()
+
+	go receive()
+
 	for {
-		var cmd string
+		var cmd, ip string
 		fmt.Scanf("%s", &cmd)
-		
-		transport.Send_to_UDS("", cmd+":chat.sock")
+		fmt.Scanf("%s", &ip)
+
+		rapi.Send_rip(ip, cmd)
 	}
 }

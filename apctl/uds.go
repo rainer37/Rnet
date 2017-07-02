@@ -43,7 +43,7 @@ func Listen_UDS(uds_addr string, handler func(net.Conn)) {
 	}
 }
 
-// close the UDS listener.
+// close the global UDS listener and ipc dispatcher SOCKET_ADDR.
 func Close_apc_uds_ln() {
 	if global_ln != nil {
 		global_ln.Close()
@@ -51,8 +51,7 @@ func Close_apc_uds_ln() {
 	fmt.Println(AC_PREFIX+"UDS Listener Closed.")
 }
 
-func Send_to_UDS(target_addr string, msg string) {
-
+func ini_uds_con(target_addr string, msg string) net.Conn {
 	if target_addr == "" {
 		target_addr = SOCKET_ADDR // default
 	}
@@ -60,17 +59,53 @@ func Send_to_UDS(target_addr string, msg string) {
 	conn, err := net.Dial("unix", target_addr)
 
 	if err != nil {
-		fmt.Println(AC_PREFIX+"UDS Dial error", err)
-		return
+		fmt.Println(AC_PREFIX+"UDS Dial error on "+target_addr, err)
+		return nil
 	}
+
+	return conn
+}
+
+/*
+	send msg to uds server, either SOCKET_ADDR or specified.
+	connection closes each msg sent.
+*/
+func Send_to_UDS(target_addr string, msg string) {
+
+	conn := ini_uds_con(target_addr, msg)
 
 	defer conn.Close()
 
-	_, err = conn.Write([]byte(msg))
+	_, err := conn.Write([]byte(msg))
 	if err != nil {
 		fmt.Println(AC_PREFIX+"Send error:", err)
 		return
 	}
 	fmt.Println(AC_PREFIX+"Sending:", msg)
 
+}
+
+func Send_and_receive(target_addr string, msg string) string {
+	
+	conn := ini_uds_con(target_addr, msg)
+
+	defer conn.Close()
+
+	_, err := conn.Write([]byte(msg))
+	if err != nil {
+		fmt.Println(AC_PREFIX+"Send error:", err)
+		return ""
+	}
+	fmt.Println(AC_PREFIX+"Sending:", msg)
+
+	buf := make([]byte, 1024)
+	nr, err := conn.Read(buf)
+	if err != nil {
+		return ""
+	}
+
+	data := buf[0:nr]
+	fmt.Println(AC_PREFIX+"Received [", string(data), "]")
+
+	return string(data)
 }

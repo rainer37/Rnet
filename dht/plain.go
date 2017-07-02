@@ -44,6 +44,14 @@ func Get() *Plain_node {
 	return cur_node
 }
 
+func Peer_list() []string {
+	var ps []string
+	for i,_ := range cur_node.NList {
+		ps = append(ps, i)
+	}
+	return ps
+}
+
 func Print() {
 	fmt.Printf("IP:\t[%s]\tPORT:\t[%s]\nSTATE:\t[%d]\t\t\tID:\t[%s]\n", cur_node.IP, cur_node.Port_string, cur_node.State, cur_node.ID)
 }
@@ -268,7 +276,6 @@ func (p *Plain_node) handle_join(msg string, conn net.Conn) {
 	}
 
 	p.Send(conn, "A "+nlist)
-	//conn.Write([]byte("A "+nlist))
 }
 
 /*
@@ -313,8 +320,7 @@ func (p *Plain_node) add_newbie(msg string) {
 		return 
 	}
 
-	id := str[1]
-	ip := str[2]
+	id, ip := str[1], str[2]
 
 	mutex.Lock()
 	p.NList[ip] = id

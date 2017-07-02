@@ -9,8 +9,9 @@ import (
 	"os"
 	"runtime"
 	"time"
+	"bufio"
+	"strings"
 	"github.com/rainer37/Rnet/dht"
-	//"github.com/rainer37/Rnet/transport"
 	ac "github.com/rainer37/Rnet/apctl"
 )
 
@@ -27,10 +28,10 @@ func main() {
 
 	loc_ip := dht.Local_ip_4()
 
-	fmt.Println("Initiating R-NET v1.0.0\t[", time.Now() ,"]")
-	fmt.Println("Local Arch & OS:\t[", runtime.GOARCH, ":", runtime.GOOS,"]")
-	fmt.Printf("PID:\t\t\t[%d]\n", os.Getpid())
-	fmt.Printf("Local IP:\t\t[%s]\n", loc_ip)
+	fmt.Printf("Initiating R-NET v1.0.0\t[ %s ]\n", time.Now())
+	fmt.Printf("Local Arch & OS:\t[ %v : %v ]\n", runtime.GOARCH, runtime.GOOS)
+	fmt.Printf("Current Rnet PID:\t[ %d ]\n", os.Getpid())
+	fmt.Printf("Local IP:\t\t[ %s ]\n", loc_ip)
 	/* flags multiplexer
 		-i : self initialization with [port] [topo]
 		-j : join on an existing node if known ip with [target_ip] [target_port] [my_port]
@@ -64,10 +65,13 @@ func main() {
 
 	time.Sleep(1 * time.Second) // wait for 1s for nice fmt.
 
-	for {
-		fmt.Print("Rnet:r$ ")
-		var op string
-		fmt.Scanf("%s\n", &op)
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Print("Rnet:r$ ")
+
+	for scanner.Scan() {
+		var text string = scanner.Text()
+		cmd := strings.Split(text, " ")
+		op := cmd[0]
 
 		switch op {
 		case "exit","0","q","quit":
@@ -77,12 +81,25 @@ func main() {
 			ac.Get_app_list()
 		case "dht":
 			dht.Print()
+		case "m":
+			// mails
 		case "":
 			fmt.Println()
-		case "1":
-			ac.Exec_app("chatchat/chat") // sample application 1.
+		case "e": // exec application
+			if len(cmd) > 1 {
+				app_name := cmd[1]
+				fmt.Println("Executing "+app_name)
+				err := ac.Exec_app(app_name) // sample application 1.
+				if err != nil {
+					fmt.Println("Cannot execute application"+app_name)
+				}
+			} else {
+				fmt.Println("No application specified. Usage: e [app_name]")
+			}
 		default:
 			fmt.Println("Unknown CMD.")
 		}
+
+		fmt.Print("Rnet:r$ ")
 	}
 }
