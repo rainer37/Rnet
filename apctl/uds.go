@@ -59,7 +59,7 @@ func ini_uds_con(target_addr string, msg string) net.Conn {
 	conn, err := net.Dial("unix", target_addr)
 
 	if err != nil {
-		fmt.Println(AC_PREFIX+"UDS Dial error on "+target_addr, err)
+		fmt.Println(AC_PREFIX+"1UDS Dial error on "+target_addr, err)
 		return nil
 	}
 

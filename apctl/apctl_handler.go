@@ -20,9 +20,9 @@ func Dispatch_app_data(msg string) {
 
 	sock, amsg := m[1][c+1:], m[1][:c]
 	
-	fmt.Println(sock, amsg)
+	fmt.Println(appdir+sock+"/"+sock+".sock", amsg)
 
-	Send_to_UDS(sock, amsg)
+	Send_to_UDS(appdir+sock+"/"+sock+".sock", amsg)
 }
 
 

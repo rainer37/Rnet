@@ -15,12 +15,13 @@ import(
 	"os/exec"
 	"os"
 	"net"
+	"runtime"
 	"io/ioutil"
 	"github.com/rainer37/Rnet/dht"
 )
 
 const AC_PREFIX string = "[APC]\t"
-const appdir string = "./app/"
+var appdir string = os.Getenv("PWD")+"/app/"
 
 var apps map[string]App = make(map[string]App) // name to App mapping.
 var friends map[string]string = make(map[string]string) // fname:ip.
@@ -77,14 +78,16 @@ func get_local_apps() {
 	app_files, _ := ioutil.ReadDir(appdir)
 	size := 0
 	for _, f := range app_files {
-		//fmt.Println(f.Name())
-		apps[f.Name()] = App{
-			f.Name(),
-		 	appdir+"/"+f.Name()+"/"+f.Name()+".sock",
-		 	f.Name()+" is amazing",
+		if f.Name()[0] != '.' {
+			fmt.Println(f.Name())
+			apps[f.Name()] = App{
+				f.Name(),
+			 	appdir+"/"+f.Name()+"/"+f.Name()+".sock",
+			 	f.Name()+" is amazing",
+			}
+			build_app(f.Name())
+			size++
 		}
-		build_app(f.Name())
-		size++
 	}
 
 	fmt.Printf(AC_PREFIX+"%d appplications found.\n", size)
@@ -105,6 +108,20 @@ func build_app(source string) {
 	execute an executable, it does not have to be a go app.
 */
 func Exec_app(source string) error {
+
+	OS := runtime.GOOS
+	fmt.Println(OS)
+
+	if OS == "darwin" {
+		cmd := "tell app \"Terminal\" to do script \"cd "+os.Getenv("PWD")+";"+appdir+source+"/"+source+"\""
+		_, err := exec.Command("osascript","-e", cmd).CombinedOutput()
+		if err != nil {
+			os.Stderr.WriteString(err.Error())
+			return err
+		}
+		return nil
+	}
+
 	_, err := exec.Command("gnome-terminal","-e", appdir+source+"/"+source ).CombinedOutput()
 	if err != nil {
 		os.Stderr.WriteString(err.Error())

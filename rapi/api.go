@@ -31,13 +31,14 @@ func Serve(handler func(net.Conn)) {
 */
 func Send(msg string) {
 	// get direct name of app
-	// sock_addr := os.Args[0][strings.LastIndex(os.Args[0], "/")+1:]+".sock"
-	sock_addr := os.Args[0]+".sock"
+	sock_addr := os.Args[0][strings.LastIndex(os.Args[0], "/")+1:]
+	//sock_addr := os.Args[0]+".sock"
 	apctl.Send_to_UDS("", msg+":"+sock_addr)
 }
 
 func Send_rip(remote_ip string, msg string) {
-	sock_addr := os.Args[0]+".sock"
+	sock_addr := os.Args[0][strings.LastIndex(os.Args[0], "/")+1:]
+	//sock_addr := os.Args[0]+".sock"
 	apctl.Send_to_UDS("", msg+":"+sock_addr+" "+remote_ip)
 }
 
