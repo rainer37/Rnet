@@ -51,6 +51,9 @@ func Close_apc_uds_ln() {
 	fmt.Println(AC_PREFIX+"UDS Listener Closed.")
 }
 
+/*
+	create connection to uds.
+*/
 func ini_uds_con(target_addr string, msg string) net.Conn {
 	if target_addr == "" {
 		target_addr = SOCKET_ADDR // default
@@ -59,7 +62,7 @@ func ini_uds_con(target_addr string, msg string) net.Conn {
 	conn, err := net.Dial("unix", target_addr)
 
 	if err != nil {
-		fmt.Println(AC_PREFIX+"1UDS Dial error on "+target_addr, err)
+		fmt.Println(AC_PREFIX+"UDS Dial error on "+target_addr, err)
 		return nil
 	}
 

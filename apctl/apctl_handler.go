@@ -11,7 +11,7 @@ import(
 	Forward the data from outside to the local application
 	through UDS. 
 */
-func Dispatch_app_data(msg string) {
+func dispatch_app_data(msg string) {
 	fmt.Println(msg)
 
 	m := strings.Split(msg, " ")
@@ -29,7 +29,7 @@ func Dispatch_app_data(msg string) {
 /*
 	Forward app data to DHT through UDS.
 */
-func Release_app_data(msg string, peer_addr string) {
+func release_app_data(msg string, peer_addr string) {
 	// send data over internet DHT nodes.
 	fmt.Printf(AC_PREFIX+"forward [%s] to DHT\n", msg)
 	dht.Send_to_ext_DHT(peer_addr, msg)
@@ -55,12 +55,12 @@ func DHT_UDS_handler(c net.Conn) {
 	fmt.Printf(AC_PREFIX+"received [%s] from app\n", data)
 
 	if string(data)[0] == 'U' {
-		Dispatch_app_data(data)
+		dispatch_app_data(data)
 	} else if string(data)[0] == 'P' { 
 		c.Write([]byte(Get_friends()))
 	} else {
 		d := strings.Split(data, " ")
-		Release_app_data(d[0], d[1])
+		release_app_data(d[0], d[1])
 	}
 }
 

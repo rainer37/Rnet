@@ -43,6 +43,6 @@ func main() {
 		fmt.Scanf("%s", &cmd)
 		fmt.Scanf("%s", &ip)
 
-		rapi.Send_rip(ip, cmd)
+		rapi.Send(ip, cmd)
 	}
 }

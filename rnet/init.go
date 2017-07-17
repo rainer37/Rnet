@@ -2,6 +2,12 @@ package main
 
 /*
 	User Interfaces for both client & server side ops.
+
+	/* flags multiplexer
+	-i : self initialization with [port] [topo]
+	-j : join on an existing node if known ip with [target_ip] [target_port] [my_port]
+	-r : returning user
+	TODO: MORE CASES -s -l -a
 */
 
 import (
@@ -27,17 +33,12 @@ func main() {
 	}
 
 	loc_ip := dht.Local_ip_4()
+	ARCH, OS := runtime.GOARCH, runtime.GOOS
 
 	fmt.Printf("Initiating R-NET v1.0.0\t[ %s ]\n", time.Now())
-	fmt.Printf("Local Arch & OS:\t[ %v : %v ]\n", runtime.GOARCH, runtime.GOOS)
+	fmt.Printf("Local Arch & OS:\t[ %v : %v ]\n", ARCH, OS)
 	fmt.Printf("Current Rnet PID:\t[ %d ]\n", os.Getpid())
 	fmt.Printf("Local IP:\t\t[ %s ]\n", loc_ip)
-	/* flags multiplexer
-		-i : self initialization with [port] [topo]
-		-j : join on an existing node if known ip with [target_ip] [target_port] [my_port]
-		-r : returning user
-		TODO: MORE CASES -s -l -a
-	*/
 
 	flag, ip := os.Args[1], loc_ip
 
@@ -61,10 +62,11 @@ func main() {
 	
 	// booting the App controller
 	go ac.AC_boot()
-	// simple client shell
 
 	time.Sleep(1 * time.Second) // wait for 1s for nice fmt.
 
+
+	// simple client shell
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Print("Rnet:r$ ")
 
@@ -89,7 +91,7 @@ func main() {
 			if len(cmd) > 1 {
 				app_name := cmd[1]
 				fmt.Println("Executing "+app_name)
-				err := ac.Exec_app(app_name) // sample application 1.
+				err := ac.Exec_app(app_name, OS) // sample application 1.
 				if err != nil {
 					fmt.Println("Cannot execute application"+app_name)
 				}

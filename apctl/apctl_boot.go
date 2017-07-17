@@ -15,7 +15,6 @@ import(
 	"os/exec"
 	"os"
 	"net"
-	"runtime"
 	"io/ioutil"
 	"github.com/rainer37/Rnet/dht"
 )
@@ -60,6 +59,7 @@ func Get_app_list() {
 
 }
 
+// return the list of peers as a string.
 func Get_friends() string {
 	peers := dht.Peer_list()
 	var ps string = ""
@@ -99,7 +99,7 @@ func get_local_apps() {
 func build_app(source string) {
 	_, err := exec.Command("go","build", "-o", appdir+source+"/"+source, appdir+source+"/"+source+".go").CombinedOutput()
 	if err != nil {
-		os.Stderr.WriteString("1"+err.Error())
+		os.Stderr.WriteString("Building "+err.Error())
 	}
 	//fmt.Println(string(output))
 }
@@ -107,22 +107,23 @@ func build_app(source string) {
 /*
 	execute an executable, it does not have to be a go app.
 */
-func Exec_app(source string) error {
+func Exec_app(source string, OS string) error {
 
-	OS := runtime.GOOS
-	fmt.Println(OS)
+	var cmd string
+	var args []string
 
 	if OS == "darwin" {
-		cmd := "tell app \"Terminal\" to do script \"cd "+os.Getenv("PWD")+";"+appdir+source+"/"+source+"\""
-		_, err := exec.Command("osascript","-e", cmd).CombinedOutput()
-		if err != nil {
-			os.Stderr.WriteString(err.Error())
-			return err
-		}
+		cmd = "osascript"
+		args = []string{"-e", "tell app \"Terminal\" to do script \"cd "+os.Getenv("PWD")+";"+appdir+source+"/"+source+"\""}
+	} else if OS == "linux" {
+		cmd = "gnome-terminal"
+		args = []string{"-e", appdir+source+"/"+source}
+	} else if OS == "windows" {
+		fmt.Println("Windows cmd coming up....")
 		return nil
 	}
 
-	_, err := exec.Command("gnome-terminal","-e", appdir+source+"/"+source ).CombinedOutput()
+	_, err := exec.Command(cmd, args...).CombinedOutput()
 	if err != nil {
 		os.Stderr.WriteString(err.Error())
 		return err
